@@ -1,6 +1,9 @@
 #version 330 compatibility
 #include "/lib/distort.glsl"
 #include "/lib/util.glsl"
+#define PI 3.14159265384
+#define DAY_BEGINNING 23215
+#define NIGHT_BEGINNING 12785
 
 uniform sampler2D colortex0;
 uniform sampler2D colortex1;
@@ -104,9 +107,35 @@ layout(location = 0) out vec4 color;
 
 const vec3 blocklightColor = vec3(1.0, 0.5, 0.08);
 const vec3 skylightColor = vec3(0.05, 0.15, 0.3);
-const vec3 sunlightColor = vec3(1.0);
+//const vec3 sunlightColor = vec3(1.0);
 const vec3 ambientColor = vec3(0.1);
-const vec3 moonlightColor = vec3(0.2, 0.2, 0.35);
+//const vec3 moonlightColor = vec3(0.2, 0.2, 0.35);
+const float peakIntensity = 1.0;
+const float flatness = 0.4;
+
+float normalizeWorldTime(int time) {
+	float normalizedTime;
+
+	if(time >= DAY_BEGINNING && time < 24000) {
+		normalizedTime = time - DAY_BEGINNING;
+	}
+	else if(time < NIGHT_BEGINNING && time >= 0) {
+		normalizedTime = time + (24000 - DAY_BEGINNING);
+	}
+	else {
+		normalizedTime = time - NIGHT_BEGINNING;
+	}
+	return normalizedTime;
+}
+
+vec3 calculateLightIntensity(int time){
+	float intensity = clamp(peakIntensity * pow(sin(PI * normalizeWorldTime(time) / 24000), flatness), 0.0, 1.0);
+
+	if(time >= NIGHT_BEGINNING && time < DAY_BEGINNING){
+		return vec3(intensity * 0.2, intensity * 0.2, intensity * 0.35); // moonlight is less intense
+	}
+	return vec3(intensity);
+}
 
 void main() {
 	color = texture(colortex0, texcoord);
@@ -144,7 +173,11 @@ void main() {
 	vec3 skylight = lightmap.g * skylightColor;
 	vec3 ambient = ambientColor;
 	
-	vec3 sunlight = sunlightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
+	vec3 lightColor = calculateLightIntensity(worldTime);
+	vec3 light = lightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
+
+	color.rgb *= blocklight + skylight + ambient + light;
+	/*vec3 sunlight = sunlightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
 	vec3 moonlight = moonlightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
 
 	if(worldTime < 12785 || worldTime > 23215){
@@ -153,6 +186,7 @@ void main() {
 	else {
 		color.rgb *= blocklight + skylight + ambient + moonlight;
 	}
+	*/
 	//color.rgb = texture(noisetex, texcoord).rgb;
 
 	/*float grayscale = dot(color.rgb, vec3(1.0 / 3.0));
