@@ -1,9 +1,6 @@
 #version 330 compatibility
 #include "/lib/distort.glsl"
 #include "/lib/util.glsl"
-#define PI 3.14159265384
-#define DAY_BEGINNING 23215
-#define NIGHT_BEGINNING 12785
 
 uniform sampler2D colortex0;
 uniform sampler2D colortex1;
@@ -98,9 +95,7 @@ vec3 getSoftShadow(vec4 shadowClipPos){
 	return shadowAccum / float(samples); // divide sum by count, getting average shadow
 }
 
-/*
-const int colortex0Format = RGB16;
-*/
+
 
 /* RENDERTARGETS: 0 */
 layout(location = 0) out vec4 color;
@@ -113,23 +108,8 @@ const vec3 ambientColor = vec3(0.1);
 const float peakIntensity = 1.0;
 const float flatness = 0.4;
 
-float normalizeWorldTime(int time) {
-	float normalizedTime;
-
-	if(time >= DAY_BEGINNING && time < 24000) {
-		normalizedTime = time - DAY_BEGINNING;
-	}
-	else if(time < NIGHT_BEGINNING && time >= 0) {
-		normalizedTime = time + (24000 - DAY_BEGINNING);
-	}
-	else {
-		normalizedTime = time - NIGHT_BEGINNING;
-	}
-	return normalizedTime;
-}
-
-vec3 calculateLightIntensity(int time){
-	float intensity = clamp(peakIntensity * pow(sin(PI * normalizeWorldTime(time) / 24000), flatness), 0.0, 1.0);
+vec3 calculateLightIntensity(float time){
+	float intensity = clamp(peakIntensity * pow(sin(PI * time / 24000), flatness), 0.0, 1.0);
 
 	if(time >= NIGHT_BEGINNING && time < DAY_BEGINNING){
 		return vec3(intensity * 0.2, intensity * 0.2, intensity * 0.35); // moonlight is less intense
@@ -137,14 +117,18 @@ vec3 calculateLightIntensity(int time){
 	return vec3(intensity);
 }
 
+vec3 calculateSkyColor(float time){
+	return mix(NIGHTSKY_COLOR, DAYSKY_COLOR, smoothstep(-0.2, 0.2, dayNightCurve(time)));
+}
+
 void main() {
 	color = texture(colortex0, texcoord);
-	
+	float normalizedTime = normalizeWorldTime(worldTime);
 	float depth = texture(depthtex0, texcoord).r;
 	
 	if (depth == 1.0) {
-		//color.rgb = vec3(0.9686, 0.8431, 0.3686);
-			return;
+		color.rgb = calculateSkyColor(normalizedTime);
+		return;
 	}
 
 	color.rgb = pow(color.rgb, vec3(2.2)); //inverse gamma correction
@@ -173,7 +157,7 @@ void main() {
 	vec3 skylight = lightmap.g * skylightColor;
 	vec3 ambient = ambientColor;
 	
-	vec3 lightColor = calculateLightIntensity(worldTime);
+	vec3 lightColor = calculateLightIntensity(normalizedTime);
 	vec3 light = lightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
 
 	color.rgb *= blocklight + skylight + ambient + light;
