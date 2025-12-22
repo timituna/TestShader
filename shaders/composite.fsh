@@ -100,19 +100,20 @@ vec3 getSoftShadow(vec4 shadowClipPos){
 /* RENDERTARGETS: 0 */
 layout(location = 0) out vec4 color;
 
-const vec3 blocklightColor = vec3(1.0, 0.5, 0.08);
-const vec3 skylightColor = vec3(0.05, 0.15, 0.3);
+const vec3 blocklightColor = vec3(1.0, 0.5, 0.08) * 5.0;
+const vec3 skylightColor = vec3(0.05, 0.15, 0.3) * 15.0;
 //const vec3 sunlightColor = vec3(1.0);
-const vec3 ambientColor = vec3(0.1);
+const vec3 ambientColor = vec3(0.1) * 4.0;
 //const vec3 moonlightColor = vec3(0.2, 0.2, 0.35);
-const float peakIntensity = 1.0;
+const float peakLightIntensity = 25.0;
+const float moonlightIntensityModifier = 0.1;
 const float flatness = 0.4;
 
 vec3 calculateLightIntensity(float time){
-	float intensity = clamp(peakIntensity * pow(sin(PI * time / 24000), flatness), 0.0, 1.0);
+	float intensity = peakLightIntensity * pow(sin(PI * time / 24000), flatness);
 
 	if(time >= NIGHT_BEGINNING && time < DAY_BEGINNING){
-		return vec3(intensity * 0.2, intensity * 0.2, intensity * 0.35); // moonlight is less intense
+		return vec3(intensity * moonlightIntensityModifier); // moonlight is less intense
 	}
 	return vec3(intensity);
 }
@@ -131,7 +132,7 @@ void main() {
 		return;
 	}
 
-	color.rgb = pow(color.rgb, vec3(2.2)); //inverse gamma correction
+	color.rgb = pow(color.rgb, vec3(GAMMA)); //inverse gamma correction
 	
 	vec2 lightmap = texture(colortex1, texcoord).rg; // we only need the r and g components
 	vec3 encodedNormal = texture(colortex2, texcoord).rgb;
