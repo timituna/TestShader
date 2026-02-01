@@ -13,16 +13,30 @@ const int colortex4Format = R32F;
 /*
 const bool colortex4Clear = false;
 */
+/*
+const int colortex6Format = RGBA16F;
+*/
+/*
+const int colortex7Format = RGBA16F;
+*/
 
 #define GAMMA 2.2
 #define DAY_BEGINNING 23215
 #define NIGHT_BEGINNING 12785
 #define DAY_DURATION 13569
 #define NIGHT_DURATION 10431
-#define DAYSKY_COLOR vec3(0.95, 0.84, 0.35)
+//#define DAYSKY_COLOR vec3(0.95, 0.84, 0.35)
+#define DAYSKY_COLOR vec3(0.3, 0.6, 0.7)
 #define NIGHTSKY_COLOR vec3(0.005, 0.005, 0.02)
 #define PI 3.14159265384
+#define GAUSSIAN_BRIGHTNESS_THRESHOLD 15.0
+#define GAUSSIAN_KERNEL_SIZE 5
+#define GAUSIAN_KERNEL_STRIDE 2
+#define DEBUG_BLOOM
+#define BLOOM
+#define BLOOM_STRENGTH 1.5
 
+const float gaussianWeights[5] = float[5] (0.2270270270, 0.1945945946, 0.1216216216, 0.0540540541, 0.0162162162);
 const int shadowMapResolution = 2048; // [512 1024 2048 4096]
 
 
@@ -31,12 +45,12 @@ vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
   return homPos.xyz / homPos.w;
 }
 
-bool isDayTime(float time){
-	return (time >= 0.0 && time < DAY_DURATION);
+int isDayTime(float normalizedTime){
+	return (normalizedTime >= 0.0 && normalizedTime < DAY_DURATION) ? 1 : 0;
 }
 
 float dayNightCurve(float time){
-	if(isDayTime(time))
+	if(isDayTime(time) == 1)
 		return sin(PI * (time - 0.0) / DAY_DURATION);
 	else 
 		return sin(PI + (PI * (time - DAY_DURATION) / NIGHT_DURATION));

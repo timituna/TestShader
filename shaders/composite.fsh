@@ -100,13 +100,11 @@ vec3 getSoftShadow(vec4 shadowClipPos){
 /* RENDERTARGETS: 0 */
 layout(location = 0) out vec4 color;
 
-const vec3 blocklightColor = vec3(1.0, 0.5, 0.08) * 5.0;
-const vec3 skylightColor = vec3(0.05, 0.15, 0.3) * 15.0;
-//const vec3 sunlightColor = vec3(1.0);
-const vec3 ambientColor = vec3(0.1) * 4.0;
-//const vec3 moonlightColor = vec3(0.2, 0.2, 0.35);
-const float peakLightIntensity = 25.0;
-const float moonlightIntensityModifier = 0.1;
+const vec3 blocklightColor = vec3(1.0, 0.5, 0.08) * 15.0;
+const vec3 skylightColor = vec3(0.05, 0.15, 0.3) * 10.0;
+const vec3 ambientColor = vec3(0.1) * 1.0;
+const float peakLightIntensity = 15.0;
+const float moonlightIntensityModifier = 0.01;
 const float flatness = 0.4;
 
 vec3 calculateLightIntensity(float time){
@@ -118,8 +116,8 @@ vec3 calculateLightIntensity(float time){
 	return vec3(intensity);
 }
 
-vec3 calculateSkyColor(float time){
-	return mix(NIGHTSKY_COLOR, DAYSKY_COLOR, smoothstep(-0.2, 0.2, dayNightCurve(time)));
+vec3 calculateTimedTransition(vec3 v1, vec3 v2, float time){
+	return mix(v1, v2, smoothstep(-0.2, 0.2, dayNightCurve(time)));
 }
 
 void main() {
@@ -128,7 +126,7 @@ void main() {
 	float depth = texture(depthtex0, texcoord).r;
 	
 	if (depth == 1.0) {
-		color.rgb = calculateSkyColor(normalizedTime);
+		color.rgb = calculateTimedTransition(NIGHTSKY_COLOR, DAYSKY_COLOR, normalizedTime);
 		return;
 	}
 
@@ -145,39 +143,14 @@ void main() {
 	vec3 feetPlayerPos = (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz;
 	vec3 shadowViewPos = (shadowModelView * vec4(feetPlayerPos, 1.0)).xyz;
 	vec4 shadowClipPos = shadowProjection * vec4(shadowViewPos, 1.0);
-	
-	/*shadowClipPos.z -= 0.001;
-	shadowClipPos.xyz = distortShadowClipPos(shadowClipPos.xyz); // distortion
-	vec3 shadowNDCPos = shadowClipPos.xyz / shadowClipPos.w;
-	vec3 shadowScreenPos = shadowNDCPos * 0.5 + 0.5;
-	*/
+
 	vec3 shadow = getSoftShadow(shadowClipPos);
-	//color.rgb = vec3(lightmap, 0.0);
-	//color.rgb = normal;
 	vec3 blocklight = lightmap.r * blocklightColor;
-	vec3 skylight = lightmap.g * skylightColor;
-	vec3 ambient = ambientColor;
+	vec3 skylight = calculateTimedTransition(skylightColor * lightmap.g * moonlightIntensityModifier * 4, skylightColor * lightmap.g, normalizedTime);
+	vec3 ambient = ambientColor; 
 	
 	vec3 lightColor = calculateLightIntensity(normalizedTime);
 	vec3 light = lightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
 
 	color.rgb *= blocklight + skylight + ambient + light;
-	/*vec3 sunlight = sunlightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
-	vec3 moonlight = moonlightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
-
-	if(worldTime < 12785 || worldTime > 23215){
-		color.rgb *= blocklight + skylight + ambient + sunlight;
-	} 
-	else {
-		color.rgb *= blocklight + skylight + ambient + moonlight;
-	}
-	*/
-	//color.rgb = texture(noisetex, texcoord).rgb;
-
-	/*float grayscale = dot(color.rgb, vec3(1.0 / 3.0));
-	color.rgb = vec3(1.0, 0.0, 0.0);*/
-	/*if(texcoord.x < 0.5)
-		color.rgb = vec3(1.0, 0.0, 0.0);
-	else
-		color.rgb = vec3(0.0, 0.0, 1.0);*/
 }

@@ -3,6 +3,7 @@
 
 uniform sampler2D colortex0;
 uniform sampler2D colortex4;
+uniform sampler2D colortex7;
 uniform sampler2D depthtex0;
 
 in vec2 texcoord;
@@ -42,12 +43,29 @@ vec3 acesFitted(vec3 v)
 
 vec3 acesNarkowicz(vec3 v)
 {
+	v *= 0.6; 
     float a = 2.51;
     float b = 0.03;
     float c = 2.43;
     float d = 0.59;
     float e = 0.14;
     return clamp((v * (a * v + b)) / (v * (c * v + d) + e), 0.0, 1.0);
+}
+
+const float A = 0.2;
+const float B = 0.40;
+const float C = 0.10;
+const float D = 0.60;
+const float E = 0.022;
+const float F = 0.30;
+const float W = 9.8;
+
+vec3 uncharted2Tonemap(vec3 x) {
+	return (( x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
+}
+
+float Uncharted2Tonemap(float x) {
+	return (( x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
 }
 
 float autoExposure() {
@@ -65,6 +83,7 @@ layout(location = 0) out vec4 color;
 
 void main() {
 	color = texture(colortex0, texcoord);
+	vec3 bloom = texture(colortex7, texcoord).rgb;
 	float exposure = texture(colortex4, vec2(0.5)).r;
 	float depth = texture(depthtex0, texcoord).r;
 	
@@ -76,8 +95,14 @@ void main() {
 			color.g *= desaturationFactor;
 		if(color.b > 10.0)
 			color.b *= desaturationFactor;
-*/
+*/		
+		#ifdef BLOOM
+			bloom *= exposure;
+			color.rgb += bloom * BLOOM_STRENGTH; // add bloom
+		#endif
 		color.rgb = acesNarkowicz(color.rgb);
+		//color.rgb = uncharted2Tonemap(color.rgb * 8.0);
+		//color.rgb /= Uncharted2Tonemap(W);
 	}
 	
 
@@ -92,4 +117,13 @@ void main() {
 	}*/
 
 	color.rgb = pow(color.rgb, vec3(1.0 / GAMMA)); // gamma correction
+
+	#ifdef DEBUG_BLOOM
+        // OVERRIDE everything and just show me the bloom buffer
+        vec3 debugBloom = texture(colortex7, texcoord).rgb;
+        
+        // Apply a little gamma so we can see faint details
+        color = vec4(pow(debugBloom, vec3(1.0/2.2)), 1.0);
+        return; 
+    #endif
 }

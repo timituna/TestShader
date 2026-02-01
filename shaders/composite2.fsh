@@ -37,7 +37,7 @@ void main() {
             vec3 color = texture(colortex0, coords).rgb;
             float luminance = getLuminance(color);
             luminance = min(luminance, 15.0);
-            float distanceToCenter = distance(coords, vec2(0.5, 0.75)); // slightly above center
+            float distanceToCenter = distance(coords, vec2(0.5, 0.70)); // slightly above center
             float weight = 1.0 - smoothstep(0.0, 0.7071, distanceToCenter); // 0.7071 is approx sqrt(2)/2
             weight = max(weight, 0.1); // ensure a minimum weight
             totalLuminance += luminance * weight;
@@ -47,8 +47,8 @@ void main() {
     }
 
     float avgLuminance = totalLuminance / totalWeight;
-    avgLuminance = clamp(avgLuminance, 0.5, 1000.0);
-    float targetExposure = 0.15 / avgLuminance;
+    avgLuminance = clamp(avgLuminance, 0.75, 1000.0);
+    float targetExposure = 0.14 / avgLuminance;
     float oldExposure = texture(colortex4, vec2(0.5, 0.5)).r;
     
     if(oldExposure <= 0.0001) {
