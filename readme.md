@@ -1,13 +1,13 @@
 ## Overview
 Experimental shader pack made to learn GLSL shading on minecraft. Using GLSL #version 330. Intended for MC 1.17+.
 
-##Current Features
+## Current Features
 - Bloom
 - ACES Tonemapping
 - Custom Fog
 - Auto-Exposure
   
-##Comparison Images
+## Comparison Images
 
 - Shader off
 <img width="1920" height="1200" alt="2026-02-08_17 24 44" src="https://github.com/user-attachments/assets/daa8d06a-30e5-4dca-b637-2a98d7160c14" />
@@ -29,7 +29,8 @@ Experimental shader pack made to learn GLSL shading on minecraft. Using GLSL #ve
 - Shader on
 <img width="1920" height="1200" alt="2026-02-08_17 21 08" src="https://github.com/user-attachments/assets/aff7c811-4a78-4f63-b69f-8d6880943078" />
 
-##Known Issues
+---
+## Known Issues
 - Shadow acne
 - Bloom is lackluster
 - Sky is empty; sun, moon and clouds aren't present on screen
