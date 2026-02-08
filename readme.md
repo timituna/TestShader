@@ -33,4 +33,5 @@ Experimental shader pack made to learn GLSL shading on minecraft. Using GLSL #ve
 ## Known Issues
 - Shadow acne
 - Bloom is lackluster
+- Cold lightsources appear warm
 - Sky is empty; sun, moon and clouds aren't present on screen
